@@ -1,0 +1,29 @@
+@import "tailwindcss";
+
+:root {
+  --cream: #FFF8F2;
+  --sage: #728667;
+  --blush: #E7A5B0;
+  --gold: #B8873E;
+  --espresso: #4B3428;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--cream);
+  color: var(--espresso);
+  font-family: Arial, Helvetica, sans-serif;
+}
+
+a,
+button {
+  transition: all 0.2s ease;
+}

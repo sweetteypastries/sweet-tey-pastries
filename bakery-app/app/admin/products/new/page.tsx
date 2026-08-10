@@ -1,7 +1,12 @@
+"use client";
+
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { revalidatePath } from "next/cache";
-import { createAdminClient } from "@/components/supabase/admin";
+import { useRouter } from "next/navigation";
+import {
+  useState,
+  type FormEvent,
+} from "react";
+import ImageUploader from "@/components/ImageUploader";
 
 const categories = [
   "Southern Desserts",
@@ -14,110 +19,84 @@ const categories = [
   "Other",
 ];
 
-function getRequiredText(
-  formData: FormData,
-  field: string
-) {
-  const value = formData.get(field);
-
-  if (typeof value !== "string" || !value.trim()) {
-    throw new Error(`${field} is required.`);
-  }
-
-  return value.trim();
-}
-
-function getOptionalText(
-  formData: FormData,
-  field: string
-) {
-  const value = formData.get(field);
-
-  if (typeof value !== "string") {
-    return null;
-  }
-
-  const trimmedValue = value.trim();
-
-  return trimmedValue || null;
-}
-
-async function createProduct(formData: FormData) {
-  "use server";
-
-  const name = getRequiredText(formData, "name");
-  const slug = getRequiredText(formData, "slug")
-    .toLowerCase()
-    .replace(/[^a-z0-9]+/g, "-")
-    .replace(/^-+|-+$/g, "");
-
-  const category = getRequiredText(
-    formData,
-    "category"
-  );
-
-  const priceValue = Number(
-    formData.get("basePrice")
-  );
-
-  if (
-    !Number.isFinite(priceValue) ||
-    priceValue < 0
-  ) {
-    throw new Error(
-      "Base price must be a valid positive number."
-    );
-  }
-
-  const supabase = createAdminClient();
-
-  const { error } = await supabase
-    .from("products")
-    .insert({
-      slug,
-      name,
-      category,
-      description: getOptionalText(
-        formData,
-        "description"
-      ),
-      image_url: getOptionalText(
-        formData,
-        "imageUrl"
-      ),
-      base_price: priceValue,
-      price_label: getOptionalText(
-        formData,
-        "priceLabel"
-      ),
-      badge: getOptionalText(formData, "badge"),
-      button_text:
-        getOptionalText(formData, "buttonText") ??
-        "Add to Cart",
-      is_available:
-        formData.get("isAvailable") === "on",
-      is_featured:
-        formData.get("isFeatured") === "on",
-      is_seasonal:
-        formData.get("isSeasonal") === "on",
-      updated_at: new Date().toISOString(),
-    });
-
-  if (error) {
-    console.error("Unable to create product:", error);
-
-    throw new Error(
-      error.code === "23505"
-        ? "A product with this slug already exists."
-        : "The product could not be saved."
-    );
-  }
-
-  revalidatePath("/admin/products");
-  redirect("/admin/products");
-}
+type ApiResponse = {
+  error?: string;
+  message?: string;
+  id?: string;
+};
 
 export default function NewProductPage() {
+  const router = useRouter();
+
+  const [isSaving, setIsSaving] = useState(false);
+  const [message, setMessage] = useState("");
+  const [hasError, setHasError] = useState(false);
+
+  async function handleSubmit(
+    event: FormEvent<HTMLFormElement>
+  ) {
+    event.preventDefault();
+
+    const form = event.currentTarget;
+    const formData = new FormData(form);
+
+    setIsSaving(true);
+    setMessage("");
+    setHasError(false);
+
+    try {
+      const response = await fetch("/api/products", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: formData.get("name"),
+          slug: formData.get("slug"),
+          category: formData.get("category"),
+          description: formData.get("description"),
+          imageUrl: formData.get("imageUrl"),
+          basePrice: formData.get("basePrice"),
+          priceLabel: formData.get("priceLabel"),
+          badge: formData.get("badge"),
+          buttonText: formData.get("buttonText"),
+          isAvailable:
+            formData.get("isAvailable") === "on",
+          isFeatured:
+            formData.get("isFeatured") === "on",
+          isSeasonal:
+            formData.get("isSeasonal") === "on",
+        }),
+      });
+
+      const result = (await response
+        .json()
+        .catch(() => ({}))) as ApiResponse;
+
+      if (!response.ok) {
+        throw new Error(
+          result.error || "The product could not be saved."
+        );
+      }
+
+      setMessage("Product saved successfully.");
+
+      router.push("/admin/products");
+      router.refresh();
+    } catch (error) {
+      console.error("Product submission failed:", error);
+
+      setHasError(true);
+      setMessage(
+        error instanceof Error
+          ? error.message
+          : "The product could not be saved."
+      );
+    } finally {
+      setIsSaving(false);
+    }
+  }
+
   return (
     <main className="min-h-screen">
       <header className="border-b border-pink-100 bg-[#fff1f5]">
@@ -147,8 +126,8 @@ export default function NewProductPage() {
       </header>
 
       <div className="mx-auto max-w-5xl px-6 py-10">
-        <form
-          action={createProduct}
+        <form noValidate
+          onSubmit={handleSubmit}
           className="space-y-8"
         >
           <section className="rounded-3xl border border-pink-100 bg-white p-7 shadow-sm">
@@ -186,8 +165,8 @@ export default function NewProductPage() {
                 />
 
                 <span className="mt-2 block text-xs leading-5 text-[#7a6a61]">
-                  Use a short unique name. Spaces are
-                  converted to hyphens.
+                  Use a unique name. Spaces are converted
+                  to hyphens.
                 </span>
               </label>
 
@@ -305,23 +284,7 @@ export default function NewProductPage() {
                 />
               </label>
 
-              <label className="block md:col-span-2">
-                <span className="mb-2 block text-sm font-bold text-[#4b3428]">
-                  Image URL
-                </span>
-
-                <input
-                  name="imageUrl"
-                  type="text"
-                  placeholder="/images/peach-cobbler-cheesecake.jpg"
-                  className="w-full rounded-xl border border-pink-200 px-4 py-3 text-[#4b3428] outline-none transition focus:border-[#ed6f91] focus:ring-2 focus:ring-pink-100"
-                />
-
-                <span className="mt-2 block text-xs leading-5 text-[#7a6a61]">
-                  For now, use an image already stored in
-                  the project&apos;s public/images folder.
-                </span>
-              </label>
+              <ImageUploader />
             </div>
           </section>
 
@@ -363,7 +326,8 @@ export default function NewProductPage() {
                   </span>
 
                   <span className="mt-1 block text-sm leading-5 text-[#6b5548]">
-                    Highlight this product in featured areas.
+                    Highlight this product in featured
+                    areas.
                   </span>
                 </span>
               </label>
@@ -388,6 +352,19 @@ export default function NewProductPage() {
             </div>
           </section>
 
+          {message && (
+            <div
+              role="status"
+              className={`rounded-2xl border px-5 py-4 font-bold ${
+                hasError
+                  ? "border-red-200 bg-red-50 text-red-700"
+                  : "border-green-200 bg-green-50 text-green-700"
+              }`}
+            >
+              {message}
+            </div>
+          )}
+
           <div className="flex flex-col-reverse gap-3 sm:flex-row sm:justify-end">
             <Link
               href="/admin/products"
@@ -398,9 +375,10 @@ export default function NewProductPage() {
 
             <button
               type="submit"
-              className="rounded-full bg-[#ed6f91] px-8 py-4 font-bold text-white transition hover:bg-[#d95f82]"
+              disabled={isSaving}
+              className="rounded-full bg-[#ed6f91] px-8 py-4 font-bold text-white transition hover:bg-[#d95f82] disabled:cursor-not-allowed disabled:opacity-60"
             >
-              Save Product
+              {isSaving ? "Saving Product..." : "Save Product"}
             </button>
           </div>
         </form>

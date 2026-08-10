@@ -10,6 +10,10 @@ import {
 
 export interface CartItem {
   id: string;
+  productId: string;
+flavorId?: string;
+sizeId?: string;
+addonIds?: string[];
   name: string;
   option?: string;
   price: number;

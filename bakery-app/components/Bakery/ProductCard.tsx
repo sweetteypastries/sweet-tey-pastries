@@ -12,6 +12,10 @@ import type {
 
 interface CartItem {
   id: string;
+  productId: string;
+  flavorId?: string;
+  sizeId?: string;
+  addonIds?: string[];
   name: string;
   price: number;
   quantity: number;
@@ -133,6 +137,14 @@ export default function ProductCard({
 
     const cartItem: CartItem = {
       id: cartItemId,
+      productId: product.id,
+      flavorId: flavorSelectionDisabled
+        ? undefined
+        : selectedFlavor.id,
+      sizeId: selectedSize?.id,
+      addonIds: selectedAddons
+        .map((addon) => addon.id)
+        .sort(),
       name: `${product.name}${optionsText}${addonsText}`,
       price: totalPrice,
       quantity: 1,

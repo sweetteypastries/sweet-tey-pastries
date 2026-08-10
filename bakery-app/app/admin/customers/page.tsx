@@ -1,36 +1,284 @@
-export default function AdminCustomersPage() {
+import Link from "next/link";
+import { redirect } from "next/navigation";
+import { createAdminClient } from "@/components/supabase/admin";
+import { requireAdmin } from "@/components/supabase/require-admin";
+
+type Order = {
+  id: string;
+  customer_email: string | null;
+  customer_name: string | null;
+  amount_total: number;
+  currency: string;
+  payment_status: string;
+  created_at: string;
+};
+
+type Customer = {
+  email: string;
+  name: string;
+  orderCount: number;
+  totalSpent: number;
+  currency: string;
+  firstOrder: string;
+  lastOrder: string;
+};
+
+function formatMoney(amount: number, currency = "usd") {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: currency.toUpperCase(),
+  }).format(amount / 100);
+}
+
+function formatDate(value: string) {
+  return new Intl.DateTimeFormat("en-US", {
+    month: "short",
+    day: "numeric",
+    year: "numeric",
+  }).format(new Date(value));
+}
+
+export default async function AdminCustomersPage() {
+  if (!(await requireAdmin())) {
+    redirect("/admin/login");
+  }
+
+  const supabase = createAdminClient();
+
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      `
+        id,
+        customer_email,
+        customer_name,
+        amount_total,
+        currency,
+        payment_status,
+        created_at
+      `
+    )
+    .eq("payment_status", "paid")
+    .order("created_at", { ascending: false });
+
+  if (error) {
+    console.error("Unable to load customers:", error);
+  }
+
+  const orders = (data ?? []) as Order[];
+
+  const customerMap = new Map<string, Customer>();
+
+  for (const order of orders) {
+    if (!order.customer_email) continue;
+
+    const email = order.customer_email.trim().toLowerCase();
+    const existing = customerMap.get(email);
+
+    if (existing) {
+      existing.orderCount += 1;
+      existing.totalSpent += order.amount_total;
+
+      if (
+        new Date(order.created_at) >
+        new Date(existing.lastOrder)
+      ) {
+        existing.lastOrder = order.created_at;
+
+        if (order.customer_name) {
+          existing.name = order.customer_name;
+        }
+      }
+
+      if (
+        new Date(order.created_at) <
+        new Date(existing.firstOrder)
+      ) {
+        existing.firstOrder = order.created_at;
+      }
+    } else {
+      customerMap.set(email, {
+        email,
+        name: order.customer_name || "Customer",
+        orderCount: 1,
+        totalSpent: order.amount_total,
+        currency: order.currency || "usd",
+        firstOrder: order.created_at,
+        lastOrder: order.created_at,
+      });
+    }
+  }
+
+  const customers = Array.from(customerMap.values()).sort(
+    (a, b) =>
+      new Date(b.lastOrder).getTime() -
+      new Date(a.lastOrder).getTime()
+  );
+
+  const totalCustomerRevenue = customers.reduce(
+    (total, customer) => total + customer.totalSpent,
+    0
+  );
+
+  const repeatCustomers = customers.filter(
+    (customer) => customer.orderCount > 1
+  ).length;
+
   return (
-    <main className="min-h-screen">
+    <main className="min-h-screen bg-[#fffaf7]">
       <header className="border-b border-pink-100 bg-[#fff1f5]">
-        <div className="mx-auto max-w-7xl px-6 py-8">
-          <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#ed6f91]">
-            Customer Management
-          </p>
+        <div className="mx-auto flex max-w-7xl flex-col gap-6 px-6 py-8 sm:flex-row sm:items-center sm:justify-between">
+          <div>
+            <p className="text-sm font-bold uppercase tracking-[0.2em] text-[#ed6f91]">
+              Sweet Tey&apos;s Pastries
+            </p>
 
-          <h1 className="mt-2 font-serif text-4xl font-bold text-[#4b3428]">
-            Customers
-          </h1>
+            <h1 className="mt-2 font-serif text-4xl font-bold text-[#4b3428]">
+              Customers
+            </h1>
 
-          <p className="mt-3 max-w-2xl leading-7 text-[#6b5548]">
-            Customer profiles, rewards, order history, and marketing
-            preferences will appear here.
-          </p>
+            <p className="mt-2 text-[#6b5548]">
+              View customers automatically collected from paid orders.
+            </p>
+          </div>
+
+          <Link
+            href="/admin"
+            className="inline-flex w-fit items-center justify-center rounded-full border border-pink-200 bg-white px-6 py-3 font-bold text-[#4b3428] transition hover:bg-pink-50"
+          >
+            Back to Dashboard
+          </Link>
         </div>
       </header>
 
       <div className="mx-auto max-w-7xl px-6 py-10">
-        <section className="rounded-3xl border border-pink-100 bg-white px-6 py-16 text-center shadow-sm">
-          <div className="text-5xl">👥</div>
+        <section className="grid gap-5 sm:grid-cols-3">
+          <article className="rounded-3xl border border-pink-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#7a6a61]">
+              Customers
+            </p>
 
-          <h2 className="mt-5 font-serif text-3xl font-bold text-[#4b3428]">
-            No customers yet
-          </h2>
+            <p className="mt-3 font-serif text-4xl font-bold text-[#4b3428]">
+              {customers.length}
+            </p>
+          </article>
 
-          <p className="mx-auto mt-4 max-w-2xl leading-7 text-[#6b5548]">
-            Customer records will appear here after orders and subscriptions
-            are saved to the database.
-          </p>
+          <article className="rounded-3xl border border-pink-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#7a6a61]">
+              Repeat Customers
+            </p>
+
+            <p className="mt-3 font-serif text-4xl font-bold text-[#4b3428]">
+              {repeatCustomers}
+            </p>
+          </article>
+
+          <article className="rounded-3xl border border-pink-100 bg-white p-6 shadow-sm">
+            <p className="text-sm font-bold uppercase tracking-wide text-[#7a6a61]">
+              Customer Revenue
+            </p>
+
+            <p className="mt-3 font-serif text-4xl font-bold text-[#4b3428]">
+              {formatMoney(totalCustomerRevenue)}
+            </p>
+          </article>
         </section>
+
+        {error ? (
+          <section className="mt-7 rounded-3xl border border-red-200 bg-red-50 p-6 text-red-800">
+            Customer information could not be loaded. Check the server
+            terminal for details.
+          </section>
+        ) : customers.length === 0 ? (
+          <section className="mt-7 rounded-3xl border border-pink-100 bg-white px-6 py-16 text-center shadow-sm">
+            <div className="text-5xl">👥</div>
+
+            <h2 className="mt-5 font-serif text-3xl font-bold text-[#4b3428]">
+              No customers yet
+            </h2>
+
+            <p className="mx-auto mt-4 max-w-2xl leading-7 text-[#6b5548]">
+              Customers will appear automatically after they complete a
+              paid order.
+            </p>
+          </section>
+        ) : (
+          <section className="mt-7 overflow-hidden rounded-3xl border border-pink-100 bg-white shadow-sm">
+            <div className="hidden grid-cols-[1.5fr_1.6fr_0.8fr_1fr_1fr] gap-4 border-b border-pink-100 bg-[#fffaf7] px-6 py-4 text-sm font-bold uppercase tracking-wide text-[#7a6a61] lg:grid">
+              <span>Customer</span>
+              <span>Email</span>
+              <span>Orders</span>
+              <span>Total Spent</span>
+              <span>Last Order</span>
+            </div>
+
+            <div className="divide-y divide-pink-100">
+              {customers.map((customer) => (
+                <article
+                  key={customer.email}
+                  className="grid gap-4 px-6 py-6 lg:grid-cols-[1.5fr_1.6fr_0.8fr_1fr_1fr] lg:items-center"
+                >
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7a6a61] lg:hidden">
+                      Customer
+                    </p>
+
+                    <p className="mt-1 font-bold text-[#4b3428] lg:mt-0">
+                      {customer.name}
+                    </p>
+
+                    <p className="mt-1 text-xs text-[#7a6a61]">
+                      Since {formatDate(customer.firstOrder)}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7a6a61] lg:hidden">
+                      Email
+                    </p>
+
+                    <p className="mt-1 break-all text-[#6b5548] lg:mt-0">
+                      {customer.email}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7a6a61] lg:hidden">
+                      Orders
+                    </p>
+
+                    <p className="mt-1 font-bold text-[#4b3428] lg:mt-0">
+                      {customer.orderCount}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7a6a61] lg:hidden">
+                      Total Spent
+                    </p>
+
+                    <p className="mt-1 font-bold text-[#ed6f91] lg:mt-0">
+                      {formatMoney(
+                        customer.totalSpent,
+                        customer.currency
+                      )}
+                    </p>
+                  </div>
+
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-wide text-[#7a6a61] lg:hidden">
+                      Last Order
+                    </p>
+
+                    <p className="mt-1 text-[#6b5548] lg:mt-0">
+                      {formatDate(customer.lastOrder)}
+                    </p>
+                  </div>
+                </article>
+              ))}
+            </div>
+          </section>
+        )}
       </div>
     </main>
   );

@@ -1,5 +1,9 @@
 import Stripe from "stripe";
 import { createAdminClient } from "@/components/supabase/admin";
+import {
+  escapeHtml,
+  sendTransactionalEmail,
+} from "@/lib/email";
 
 export const runtime = "nodejs";
 
@@ -346,6 +350,202 @@ async function savePaidOrder(
       new Date().toISOString(),
   };
 
+
+  async function awardRewards(orderId: string) {
+    if (!customerEmail) {
+      return 0;
+    }
+
+    const normalizedEmail =
+      customerEmail.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      return 0;
+    }
+
+    let isRewardsMember =
+      checkoutDetails?.join_rewards === true;
+
+    if (!isRewardsMember) {
+      const {
+        data: existingRewardAccount,
+        error: rewardAccountError,
+      } = await supabase
+        .from("reward_accounts")
+        .select("email")
+        .eq("email", normalizedEmail)
+        .maybeSingle();
+
+      if (rewardAccountError) {
+        console.error(
+          "REWARD_ACCOUNT_LOOKUP_ERROR",
+          rewardAccountError
+        );
+
+        throw rewardAccountError;
+      }
+
+      isRewardsMember =
+        Boolean(existingRewardAccount);
+    }
+
+    if (!isRewardsMember) {
+      return 0;
+    }
+
+    const eligibleSubtotalCents =
+      Math.max(
+        0,
+        (session.amount_subtotal ?? 0) -
+          Number(
+            checkoutDetails?.delivery_fee_amount ?? 0
+          ) -
+          Number(
+            checkoutDetails?.shipping_fee_amount ?? 0
+          ) -
+          Number(
+            checkoutDetails?.tip_amount ?? 0
+          )
+      );
+
+    const points =
+      Math.floor(
+        eligibleSubtotalCents / 100
+      );
+
+    if (points <= 0) {
+      return 0;
+    }
+
+    const {
+      data: pointsAwarded,
+      error: rewardError,
+    } = await supabase.rpc(
+      "award_purchase_points",
+      {
+        p_email: normalizedEmail,
+        p_customer_name:
+          customerName ?? "",
+        p_order_id: orderId,
+        p_stripe_session_id:
+          session.id,
+        p_points: points,
+      }
+    );
+
+    if (rewardError) {
+      console.error(
+        "REWARDS_AWARD_ERROR",
+        rewardError
+      );
+
+      throw rewardError;
+    }
+
+    console.log(
+      pointsAwarded
+        ? "REWARDS_AWARDED"
+        : "REWARDS_ALREADY_AWARDED",
+      normalizedEmail,
+      points
+    );
+
+    return points;
+  }
+
+  async function sendPaymentConfirmation(
+    orderId: string,
+    pointsEarned: number
+  ) {
+    if (!customerEmail) {
+      return;
+    }
+
+    const safeName = escapeHtml(
+      customerName || "Sweet Tey's customer"
+    );
+
+    const totalPaid = new Intl.NumberFormat(
+      "en-US",
+      {
+        style: "currency",
+        currency: (
+          session.currency ?? "usd"
+        ).toUpperCase(),
+      }
+    ).format(
+      (session.amount_total ?? 0) / 100
+    );
+
+    const rewardsSection =
+      pointsEarned > 0
+        ? `
+          <div style="margin-top:24px;padding:18px;border-radius:14px;background:#fff1f5;">
+            <strong style="color:#4b3428;">Sweet Rewards</strong>
+            <p style="margin:8px 0 0;color:#6b5548;">
+              You earned <strong>${pointsEarned}</strong> Sweet Rewards points from this purchase.
+            </p>
+          </div>
+        `
+        : "";
+
+    try {
+      const emailId =
+        await sendTransactionalEmail({
+          to: customerEmail,
+          subject:
+            "Payment received — Sweet Tey's Pastries",
+          idempotencyKey:
+            `payment-confirmation-${session.id}`,
+          html: `
+            <div style="font-family:Arial,sans-serif;max-width:620px;margin:0 auto;color:#4b3428;">
+              <h1 style="color:#ed6f91;">Payment received 💕</h1>
+
+              <p>Hi ${safeName},</p>
+
+              <p>
+                Thank you for your order from Sweet Tey's Pastries.
+                Your payment was received successfully and your order is now in our system.
+              </p>
+
+              <div style="margin:24px 0;padding:18px;border:1px solid #f4c8d5;border-radius:14px;">
+                <p style="margin:0 0 8px;">
+                  <strong>Order:</strong> ${escapeHtml(orderId)}
+                </p>
+
+                <p style="margin:0;">
+                  <strong>Total paid:</strong> ${escapeHtml(totalPaid)}
+                </p>
+              </div>
+
+              ${rewardsSection}
+
+              <p style="margin-top:24px;">
+                We'll send another email when your order status changes.
+              </p>
+
+              <p>
+                With love,<br />
+                <strong>Sweet Tey's Pastries</strong>
+              </p>
+            </div>
+          `,
+        });
+
+      console.log(
+        "PAYMENT_CONFIRMATION_EMAIL_SENT",
+        orderId,
+        emailId
+      );
+    } catch (error) {
+      console.error(
+        "PAYMENT_CONFIRMATION_EMAIL_ERROR",
+        orderId,
+        error
+      );
+    }
+  }
+
   if (existingOrder) {
     const {
       data: updatedOrder,
@@ -384,6 +584,16 @@ async function savePaidOrder(
       updatedOrder.id
     );
 
+    const pointsEarned =
+      await awardRewards(
+        updatedOrder.id
+      );
+
+    await sendPaymentConfirmation(
+      updatedOrder.id,
+      pointsEarned
+    );
+
     return;
   }
 
@@ -419,6 +629,16 @@ async function savePaidOrder(
     "ORDER_INSERT_OK",
     insertedOrder.id,
     insertedOrder.stripe_session_id
+  );
+
+  const pointsEarned =
+    await awardRewards(
+      insertedOrder.id
+    );
+
+  await sendPaymentConfirmation(
+    insertedOrder.id,
+    pointsEarned
   );
 }
 

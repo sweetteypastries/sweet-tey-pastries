@@ -9,7 +9,7 @@ export const dessertProducts: DessertProduct[] = [
     description:
       "Creamy homemade banana pudding layered with vanilla wafers and fresh bananas.",
     buttonText: "Add Banana Pudding",
-    priceLabel: "$5 each • $55 for 12",
+    priceLabel: "$5 each • $55 for 12 • $45 full pan",
     flavors: [
       {
         id: "individual-cup",
@@ -26,6 +26,14 @@ export const dessertProducts: DessertProduct[] = [
         description:
           "Twelve individual banana pudding cups for parties and events.",
         price: 55,
+      },
+      {
+        id: "full-pan",
+        name: "Full Pan — $45",
+        image: "/images/banana-pudding-full-pan.png",
+        description:
+          "A full pan of creamy homemade banana pudding layered with vanilla wafers and fresh bananas.",
+        price: 45,
       },
     ],
   },

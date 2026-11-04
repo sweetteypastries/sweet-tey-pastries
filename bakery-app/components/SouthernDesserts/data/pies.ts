@@ -2,152 +2,93 @@ import type { DessertProduct } from "../../Bakery/catalogTypes";
 
 export const pieProducts: DessertProduct[] = [
   {
-    id: "sweet-potato-pie",
-    name: "Sweet Potato Pie",
-    category: "pies",
-    badge: "Homemade Daily",
-    description:
-      "Our signature Southern sweet potato pie baked with warm spices in a flaky homemade crust.",
-    buttonText: "Add Sweet Potato Pie",
-    flavors: [
+    "id": "whole-pies",
+    "name": "Pies",
+    "category": "pies",
+    "description": "Choose your favorite whole pie.",
+    "buttonText": "Add Pie to Cart",
+    "priceLabel": "Whole pie",
+    "flavors": [
       {
-        id: "whole-pie",
-        name: "Whole Sweet Potato Pie",
-        image: "/images/sweet-potato-pie.png",
-        description:
-          "A full homemade Southern Sweet Potato Pie that's perfect for holidays and family dinners.",
-        price: 35,
+        "id": "sweet-potato",
+        "name": "Sweet Potato",
+        "image": "/images/sweet-potato-pie.png",
+        "price": 35
       },
       {
-        id: "pie-bites",
-        name: "Sweet Potato Pie Bites (12)",
-        image: "/images/sweet-potato-pie-bites.jpg",
-        description:
-          "One dozen bite-sized Sweet Potato Pie treats made with our signature filling.",
-        price: 20,
+        "id": "pumpkin",
+        "name": "Pumpkin",
+        "image": "/images/pumpkin-pie.jpg",
+        "price": 35
       },
-    ],
+      {
+        "id": "mixed-berry",
+        "name": "Mixed Berry",
+        "image": "/images/mixed-berry-pie.png",
+        "price": 35
+      },
+      {
+        "id": "strawberry",
+        "name": "Strawberry",
+        "image": "/images/strawberry-pie.jpg",
+        "price": 35
+      },
+      {
+        "id": "apple",
+        "name": "Apple",
+        "image": "/images/apple-pie.jpg",
+        "price": 35
+      }
+    ]
   },
   {
-    id: "pumpkin-pie",
-    name: "Pumpkin Pie",
-    category: "pies",
-    badge: "Seasonal Favorite",
-    description:
-      "Classic pumpkin pie with warm spices in a flaky crust, perfect for your holiday table.",
-    buttonText: "Add Pumpkin Pie",
-    priceLabel: "$35 whole pie",
-    flavors: [
+    "id": "no-bake-cheesecake",
+    "name": "No-Bake Cheesecake",
+    "category": "pies",
+    "description": "Choose your favorite creamy no-bake cheesecake.",
+    "buttonText": "Add Cheesecake to Cart",
+    "priceLabel": "Whole cheesecake",
+    "flavors": [
       {
-        id: "whole-pie",
-        name: "Whole Pumpkin Pie",
-        image: "/images/pumpkin-pie.jpg",
-        description:
-          "A whole pumpkin pie for holiday gatherings and family dinners.",
-        price: 35,
+        "id": "original",
+        "name": "Original",
+        "image": "/images/no-bake-cheesecake-original.png",
+        "price": 35
       },
-    ],
+      {
+        "id": "strawberry",
+        "name": "Strawberry",
+        "image": "/images/no-bake-cheesecake-strawberry.png",
+        "price": 35
+      },
+      {
+        "id": "cookies-and-cream",
+        "name": "Cookies & Cream",
+        "image": "/images/no-bake-cheesecake-cookies-and-cream.png",
+        "price": 35
+      },
+      {
+        "id": "blueberry-lavender",
+        "name": "Blueberry Lavender",
+        "image": "/images/no-bake-cheesecake-blueberry-lavender.png",
+        "price": 35
+      }
+    ]
   },
-{
-  "id": "mixed-berry-pie",
-  "name": "Mixed Berry Pie",
-  "category": "pies",
-  "description": "A whole mixed berry pie with a flaky crust.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole Mixed Berry Pie",
-      "image": "/images/pie-image-coming-soon.svg",
-      "description": "A whole mixed berry pie with a flaky crust.",
-      "price": 35
-    }
-  ]
-},
-{
-  "id": "strawberry-pie",
-  "name": "Strawberry Pie",
-  "category": "pies",
-  "description": "A whole strawberry pie with a flaky crust.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole Strawberry Pie",
-      "image": "/images/strawberry-pie.jpg",
-      "description": "A whole strawberry pie with a flaky crust.",
-      "price": 35
-    }
-  ]
-},
-{
-  "id": "apple-pie",
-  "name": "Apple Pie",
-  "category": "pies",
-  "description": "A whole apple pie with warm spices and a flaky crust.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole Apple Pie",
-      "image": "/images/apple-pie.jpg",
-      "description": "A whole apple pie with warm spices and a flaky crust.",
-      "price": 35
-    }
-  ]
-},
-{
-  "id": "no-bake-strawberry-cheesecake",
-  "name": "No-Bake Strawberry Cheesecake",
-  "category": "pies",
-  "description": "A whole creamy no-bake strawberry cheesecake.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole No-Bake Strawberry Cheesecake",
-      "image": "/images/pie-image-coming-soon.svg",
-      "description": "A whole creamy no-bake strawberry cheesecake.",
-      "price": 35
-    }
-  ]
-},
-{
-  "id": "no-bake-cookies-and-cream-cheesecake",
-  "name": "No-Bake Cookies & Cream Cheesecake",
-  "category": "pies",
-  "description": "A whole creamy no-bake cookies and cream cheesecake.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole No-Bake Cookies & Cream Cheesecake",
-      "image": "/images/pie-image-coming-soon.svg",
-      "description": "A whole creamy no-bake cookies and cream cheesecake.",
-      "price": 35
-    }
-  ]
-},
-{
-  "id": "no-bake-blueberry-lavender-cheesecake",
-  "name": "No-Bake Blueberry Lavender Cheesecake",
-  "category": "pies",
-  "description": "A whole creamy no-bake cheesecake with blueberry and lavender.",
-  "buttonText": "Add to Cart",
-  "priceLabel": "$35 whole",
-  "flavors": [
-    {
-      "id": "whole-pie",
-      "name": "Whole No-Bake Blueberry Lavender Cheesecake",
-      "image": "/images/pie-image-coming-soon.svg",
-      "description": "A whole creamy no-bake cheesecake with blueberry and lavender.",
-      "price": 35
-    }
-  ]
-},
+  {
+    "id": "sweet-potato-pie",
+    "name": "Sweet Potato Pie Bites",
+    "category": "pies",
+    "description": "One dozen bite-sized treats made with our signature sweet potato filling.",
+    "buttonText": "Add Pie Bites",
+    "priceLabel": "12 pie bites",
+    "flavors": [
+      {
+        "id": "pie-bites",
+        "name": "Sweet Potato Pie Bites (12)",
+        "image": "/images/sweet-potato-pie-bites.jpg",
+        "price": 20
+      }
+    ]
+  }
 ];

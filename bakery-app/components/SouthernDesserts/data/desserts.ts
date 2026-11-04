@@ -29,7 +29,7 @@ export const dessertProducts: DessertProduct[] = [
       },
       {
         id: "full-pan",
-        name: "Full Pan — $45",
+        name: "Full Pan",
         image: "/images/banana-pudding-full-pan.png",
         description:
           "A full pan of creamy homemade banana pudding layered with vanilla wafers and fresh bananas.",

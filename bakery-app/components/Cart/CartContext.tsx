@@ -2,6 +2,7 @@
 
 import {
   createContext,
+  useEffect,
   useContext,
   useMemo,
   useState,
@@ -43,6 +44,64 @@ export function CartProvider({
   children,
 }: CartProviderProps) {
   const [items, setItems] = useState<CartItem[]>([]);
+  const [cartLoaded, setCartLoaded] = useState(false);
+
+  useEffect(() => {
+    try {
+      const saved = window.localStorage.getItem("sweet-tey-cart-v1");
+
+      if (saved) {
+        const parsed: unknown = JSON.parse(saved);
+
+        if (Array.isArray(parsed)) {
+          const restored = parsed.filter((item): item is CartItem =>
+            item !== null &&
+            typeof item === "object" &&
+            typeof item.id === "string" &&
+            typeof item.productId === "string" &&
+            typeof item.name === "string" &&
+            typeof item.image === "string" &&
+            typeof item.price === "number" &&
+            Number.isFinite(item.price) &&
+            item.price >= 0 &&
+            Number.isInteger(item.quantity) &&
+            item.quantity > 0 &&
+            (item.flavorId === undefined ||
+              typeof item.flavorId === "string") &&
+            (item.sizeId === undefined ||
+              typeof item.sizeId === "string") &&
+            (item.option === undefined ||
+              typeof item.option === "string") &&
+            (item.addonIds === undefined ||
+              (Array.isArray(item.addonIds) &&
+                item.addonIds.every(
+                  (id: unknown) => typeof id === "string"
+                )))
+          );
+
+          setItems(restored);
+        }
+      }
+    } catch {
+      // Keep the cart usable if browser storage is unavailable.
+    } finally {
+      setCartLoaded(true);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!cartLoaded) return;
+
+    try {
+      window.localStorage.setItem(
+        "sweet-tey-cart-v1",
+        JSON.stringify(items)
+      );
+    } catch {
+      // Keep shopping available if saving fails.
+    }
+  }, [items, cartLoaded]);
+
 
   const addItem = (newItem: CartItem) => {
     setItems((currentItems) => {

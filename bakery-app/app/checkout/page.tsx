@@ -182,8 +182,34 @@ export default function CheckoutPage() {
     hasTea &&
     !hasNonTea;
 
+  const deliveryPromoDateParts = new Intl.DateTimeFormat("en-US", {
+    timeZone: "America/Los_Angeles",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).formatToParts(new Date());
+
+  const deliveryPromoDatePart = (type: string) =>
+    deliveryPromoDateParts.find((part) => part.type === type)?.value ?? "";
+
+  const deliveryPromoToday =
+    `${deliveryPromoDatePart("year")}-${deliveryPromoDatePart("month")}-${deliveryPromoDatePart("day")}`;
+
+  const deliveryPromoMarinZips = new Set(["94901", "94903", "94904", "94920", "94924", "94925", "94929", "94930", "94933", "94937", "94938", "94939", "94940", "94941", "94942", "94945", "94946", "94947", "94948", "94949", "94950", "94956", "94957", "94960", "94963", "94964", "94965", "94966", "94970", "94971", "94973", "94998"]);
+
+  const deliveryPromoZip =
+    postalCode.match(/\d{5}/)?.[0] ?? "";
+
+  const thanksgivingDeliveryWeek =
+    deliveryPromoToday >= "2026-11-23" &&
+    deliveryPromoToday < "2026-11-30";
+
+  const thanksgivingFreeDelivery =
+    thanksgivingDeliveryWeek &&
+    deliveryPromoMarinZips.has(deliveryPromoZip);
+
   const deliveryFee =
-    orderType === "delivery"
+    orderType === "delivery" && !thanksgivingFreeDelivery
       ? DELIVERY_FEE
       : 0;
 
@@ -719,7 +745,9 @@ export default function CheckoutPage() {
                     </strong>
 
                     <span className="text-sm text-[#6b5548]">
-                      $10.00
+                      {thanksgivingFreeDelivery
+                        ? "Free — Thanksgiving Week"
+                        : "$10.00"}
                     </span>
                   </button>
 
@@ -1260,14 +1288,16 @@ export default function CheckoutPage() {
                   </strong>
                 </div>
 
-                {deliveryFee > 0 && (
+                {orderType === "delivery" && (
                   <div className="flex justify-between">
                     <span>
                       Marin Delivery
                     </span>
 
                     <strong>
-                      $10.00
+                      {thanksgivingFreeDelivery
+                        ? "Free — Thanksgiving Week"
+                        : "$10.00"}
                     </strong>
                   </div>
                 )}

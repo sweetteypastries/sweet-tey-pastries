@@ -996,9 +996,27 @@ export async function POST(
         0
       );
 
+    const californiaDateParts = new Intl.DateTimeFormat("en-US", {
+      timeZone: "America/Los_Angeles",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(new Date());
+
+    const datePart = (type: string) =>
+      californiaDateParts.find((part) => part.type === type)?.value ?? "";
+
+    const californiaToday =
+      `${datePart("year")}-${datePart("month")}-${datePart("day")}`;
+
+    const thanksgivingFreeDelivery =
+      orderType === "delivery" &&
+      MARIN_COUNTY_ZIP_CODES.has(normalizeZipCode(postalCode ?? "")) &&
+      californiaToday >= "2026-11-23" &&
+      californiaToday < "2026-11-30";
+
     const deliveryFeeAmount =
-      orderType ===
-      "delivery"
+      orderType === "delivery" && !thanksgivingFreeDelivery
         ? DELIVERY_FEE_CENTS
         : 0;
 

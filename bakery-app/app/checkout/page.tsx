@@ -295,6 +295,15 @@ export default function CheckoutPage() {
   }
 
   async function handlePayment() {
+    // THANKSGIVING_CLOSURE
+    if (
+      orderType !== "shipping" &&
+      preferredDate === "2026-11-26"
+    ) {
+      setPaymentError("We are closed for pickup and delivery on Thanksgiving Day, November 26. Please choose another date.");
+      return;
+    }
+
     if (items.length === 0) {
       setPaymentError(
         "Your cart is empty."
@@ -881,13 +890,25 @@ export default function CheckoutPage() {
                         value={
                           preferredDate
                         }
-                        onChange={(event) =>
-                          setPreferredDate(
-                            event.target.value
-                          )
-                        }
+                        onChange={(event) => {
+                          const date = event.target.value;
+                          if (date === "2026-11-26") {
+                            event.target.setCustomValidity(
+                              "We are closed for pickup and delivery on Thanksgiving Day, November 26. Please choose another date."
+                            );
+                            event.target.reportValidity();
+                            setPreferredDate("");
+                            return;
+                          }
+                          event.target.setCustomValidity("");
+                          setPreferredDate(date);
+                        }}
                         className="w-full rounded-xl border border-pink-200 px-4 py-3"
                       />
+                      <p className="mt-2 text-sm font-medium text-[#6b5548]">
+                        Closed Thanksgiving Day, November 26, 2026.
+                        No pickups or deliveries.
+                      </p>
                     </label>
 
                     <label>

@@ -433,6 +433,14 @@ export async function POST(
         details.preferredDate
       );
 
+    // THANKSGIVING_CLOSURE
+    if (
+      orderType !== "shipping" &&
+      preferredDate === "2026-11-26"
+    ) {
+      throw new Error("We are closed for pickup and delivery on Thanksgiving Day, November 26. Please choose another date.");
+    }
+
     const preferredTime =
       optionalText(
         details.preferredTime

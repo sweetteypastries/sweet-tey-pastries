@@ -201,8 +201,8 @@ export default function CheckoutPage() {
     postalCode.match(/\d{5}/)?.[0] ?? "";
 
   const thanksgivingDeliveryWeek =
-    deliveryPromoToday >= "2026-11-23" &&
-    deliveryPromoToday < "2026-11-30";
+    preferredDate >= "2026-11-23" &&
+    preferredDate < "2026-11-30";
 
   const thanksgivingFreeDelivery =
     thanksgivingDeliveryWeek &&

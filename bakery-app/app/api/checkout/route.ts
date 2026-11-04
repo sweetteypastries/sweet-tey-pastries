@@ -1012,8 +1012,8 @@ export async function POST(
     const thanksgivingFreeDelivery =
       orderType === "delivery" &&
       MARIN_COUNTY_ZIP_CODES.has(normalizeZipCode(postalCode ?? "")) &&
-      californiaToday >= "2026-11-23" &&
-      californiaToday < "2026-11-30";
+      (preferredDate ?? "") >= "2026-11-23" &&
+      (preferredDate ?? "") < "2026-11-30";
 
     const deliveryFeeAmount =
       orderType === "delivery" && !thanksgivingFreeDelivery

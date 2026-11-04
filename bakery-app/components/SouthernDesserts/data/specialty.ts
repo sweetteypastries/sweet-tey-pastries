@@ -46,6 +46,14 @@ export const specialtyProducts: DessertProduct[] = [
           "A family-size pan of homemade Southern Peach Cobbler.",
         price: 35,
       },
+      {
+        id: "full-pan",
+        name: "Full Pan",
+        image: "/images/peach-cobbler-full-pan.png",
+        description:
+          "A full pan of homemade Southern Peach Cobbler with sweet peaches and a buttery crust.",
+        price: 45,
+      },
     ],
   },
 
